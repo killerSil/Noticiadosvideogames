@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novidades do Mundo dos Videogames</title>
+    <!-- Meta Tags Open Graph para Facebook e outras redes sociais -->
+    <!-- LEMBRE-SE DE SUBSTITUIR [SEU_URL_PUBLICO] PELO LINK REAL DEPOIS DA HOSPEDAGEM -->
+    <meta property="og:title" content="Central de Notícias de Jogos | Últimas Novidades" />
+    <meta property="og:description" content="Mantenha-se atualizado com os maiores lançamentos e notícias da indústria de videogames, com análises geradas por IA." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="[SEU_URL_PUBLICO]" /> 
+    <meta property="og:image" content="https://placehold.co/1200x630/0d1117/ffffff?text=Central+de+Noticias+de+Jogos" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    
+    <!-- Carrega o Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos base EGS-inspired */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Fundo escuro, quase preto (Dark Slate) */
+            background-color: #0d1117; 
+            min-height: 100vh;
+        }
+        
+        /* Contêiner principal com cor de superfície de loja */
+        .store-container {
+            background-color: #161b22; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilo para preservar formatação do LLM no resumo da notícia */
+        .llm-output {
+             white-space: pre-wrap;
+             color: #c9d1d9; /* Cor de texto mais clara */
+             font-size: 1rem;
+        }
+        
+        /* Estilos dos Botões de Tópico */
+        .topic-button {
+            @apply bg-gray-700 text-gray-100 font-medium py-2 px-4 rounded-full shadow-lg transition duration-200 hover:bg-red-600 hover:text-white hover:shadow-red-500/50 text-sm md:text-base;
+        }
+        .sub-topic-button {
+            @apply bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition duration-200 hover:bg-red-500 hover:text-white;
+        }
+
+        /* Card de Jogo na secção de Lançamentos (Mantido, mas sobrescrito abaixo) */
+        .game-card {
+            @apply p-0 overflow-hidden rounded-xl border border-gray-700 bg-gray-800 transition duration-300 transform hover:scale-[1.03] hover:shadow-2xl hover:shadow-red-500/20 cursor-pointer;
+        }
+
+        /* Placeholder de imagem para cards menores (Mantido) */
+        .card-image-placeholder {
+             /* Cor de fundo escura */
+            background-color: #1e293b; 
+            min-height: 100px;
+        }
+        
+        /* Adiciona estilo para truncar texto com fallback no JS */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+        
+        /* === ESTILOS STEAM-INSPIRED (SOBRESCRITA PARA A SECÇÃO DE LANÇAMENTOS) === */
+        .steam-release-list {
+            background-color: #1e3040; /* Fundo azul escuro para a lista, mais próximo do Steam */
+        }
+
+        .steam-release-item {
+            /* Fundo do card: Azul-cinzento escuro típico da Steam */
+            @apply flex flex-col md:flex-row p-3 rounded-lg border-b border-[#314a5d] bg-[#2a475e] transition duration-300 transform hover:scale-[1.005] hover:bg-[#385b7c] cursor-pointer shadow-lg;
+            min-height: 100px;
+            margin-bottom: 0.5rem; /* Espaçamento entre itens */
+        }
+
+        .steam-image-placeholder-container {
+             /* Simula o tamanho do banner Steam 460x215 */
+            width: 100%;
+            height: 100%;
+            max-width: 150px; /* Largura fixa para a imagem na lista */
+            background-color: #1e293b; 
+            min-height: 80px;
+            @apply rounded-md border border-gray-600;
+        }
+        .steam-title {
+            color: #66c0f4; /* Azul Steam */
+            @apply font-semibold;
+        }
+        .steam-date {
+            color: #c7d5e0; /* Cinza claro */
+            @apply text-sm;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto store-container rounded-xl p-6 md:p-10 border border-gray-700">
+
+        <!-- CONTAINER PRINCIPAL (Main View) -->
+        <div id="mainView">
+            
+            <!-- CABEÇALHO E FERRAMENTAS DE BUSCA (Mantido no estilo EGS/Dark) -->
+            <header class="text-center mb-10">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">
+                     CENTRAL DE <span class="text-red-500">NOTÍCIAS</span> DE JOGOS
+                </h1>
+                <p class="text-gray-400 text-lg mb-6">
+                    Mantenha-se atualizado com os maiores lançamentos e notícias da indústria.
+                </p>
+
+                <!-- Formulário de Consulta -->
+                <div class="space-y-4 max-w-2xl mx-auto">
+                    <input
+                        type="text"
+                        id="queryInput"
+                        placeholder="Ex: Últimas notícias do PlayStation 5"
+                        value="Novidades e lançamentos de jogos mais importantes do momento"
+                        class="w-full px-5 py-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-red-500 focus:border-red-500 shadow-inner transition duration-150"
+                    />
+                    <button
+                        id="searchButton"
+                        onclick="fetchGameNews()"
+                        class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-[1.005] focus:outline-none focus:ring-4 focus:ring-red-500/50 flex items-center justify-center disabled:opacity-50"
+                    >
+                        Buscar Novidades
+                        <svg id="searchIcon" class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg id="loadingSpinner" class="w-5 h-5 ml-2 animate-spin text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tópicos do Momento (Horizontal) -->
+            <div class="mb-12">
+                <h2 class="text-2xl font-bold text-gray-200 mb-4 border-b border-gray-700 pb-2">🎮 Tópicos em Destaque</h2>
+                <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                    <button onclick="setQueryAndFetch('Últimas notícias de PC Gaming')" class="topic-button">💻 PC Gaming</button>
+                    <button onclick="toggleConsoleSubMenu()" class="topic-button" id="consolasButton">🕹️ Consolas</button>
+                    <button onclick="setQueryAndFetch('Novidades sobre jogos Indie e seus criadores')" class="topic-button">🌟 Jogos Indie</button>
+                    <button onclick="setQueryAndFetch('Resultados e notícias de Esports e torneios')" class="topic-button">🏆 Esports</button>
+                </div>
+                
+                <!-- Submenu de Consolas (Vertical/Flexível) -->
+                <div id="consoleSubMenu" class="hidden mt-4 pt-4 border-t border-gray-700 mx-auto max-w-3xl">
+                    <p class="text-gray-400 mb-3 text-center text-sm">ESCOLHA UMA PLATAFORMA POPULAR:</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button onclick="setQueryAndFetch('Últimas notícias da PlayStation 5')" class="sub-topic-button">PlayStation 5</button>
+                        <button onclick="setQueryAndFetch('Últimas notícias da Xbox Series X|S')" class="sub-topic-button">Xbox Series X|S</button>
+                        <button onclick="setQueryAndFetch('Últimas notícias da Nintendo Switch')" class="sub-topic-button">Nintendo Switch</button>
+                        <button onclick="setQueryAndFetch('Últimas notícias da Steam Deck')" class="sub-topic-button">Steam Deck</button>
+                    </div>
+                </div>
+            </div>
+            
+
+            <!-- SECÇÃO DE DESTAQUE (Resumo da Notícia Principal - Mantido no estilo EGS/Dark) -->
+            <section class="mb-12">
+                <h2 class="text-2xl font-bold text-gray-200 mb-4 border-b border-gray-700 pb-2">📰 Notícia Principal & Destaque</h2>
+                
+                <!-- CARD DE DESTAQUE GRANDE - Fundo Preto total -->
+                <div id="results" class="bg-black rounded-xl overflow-hidden shadow-xl border border-gray-700 transition duration-300 hover:shadow-red-500/30">
+                    <div id="featuredCardContent" class="min-h-[300px] flex items-center justify-center text-center p-8">
+                        <!-- MENSAGEM DE CARREGAMENTO -->
+                        <p id="initialMessage" class="text-gray-400 text-lg">Como repórter de videojogos, apresento o resumo das novidades e dos lançamentos mais importantes que marcam o momento no universo dos jogos eletrónicos.</p>
+                    </div>
+                </div>
+                
+                <!-- Fonte e Citações para Destaque -->
+                <div id="sourcesContainer" class="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-700 hidden">
+                    <h3 class="text-lg font-medium text-gray-300 mb-2">Outras Fontes Consultadas:</h3>
+                    <ul id="sourcesList" class="space-y-1 text-sm text-gray-400 pl-4 list-disc">
+                        <!-- As citações serão inseridas aqui -->
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- SECÇÃO DE PRÓXIMOS LANÇAMENTOS (GRID DE LISTA - STEAM INSPIRED) -->
+            <section class="mb-12">
+                <h2 class="text-2xl font-bold text-gray-200 mb-4 border-b border-gray-700 pb-2">📅 Próximos Lançamentos (Top 10)</h2>
+                
+                <!-- Container da Grid de Lançamentos - Agora usando o estilo de fundo Steam -->
+                <div id="releasesContainer" class="steam-release-list grid grid-cols-1 gap-4 p-4 rounded-xl min-h-[150px] items-center justify-center">
+                    <p id="releasesMessage" class="col-span-full text-gray-400 text-center">A carregar a lista de lançamentos...</p>
+                </div>
+            </section>
+
+            <!-- Área de Erro (Oculta por padrão) -->
+            <div id="errorContainer" class="mt-8 p-4 bg-red-800 border border-red-600 text-red-200 rounded-lg hidden" role="alert">
+                <p class="font-bold">Erro na Busca</p>
+                <p id="errorMessage"></p>
+            </div>
+        </div>
+        
+        <!-- CONTAINER DE DETALHES DO JOGO (Detail View - Tela de Produto) -->
+        <div id="detailView" class="hidden">
+            <button onclick="switchView('mainView')" class="mb-8 flex items-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 shadow-md">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Voltar para Loja
+            </button>
+            
+            <!-- Detalhes do Jogo -->
+            <div class="space-y-8"> 
+                <h2 id="gameDetailTitle" class="text-4xl font-extrabold text-white mb-4"></h2>
+                
+                <!-- Coluna Principal: Imagem e Conteúdo Detalhado -->
+                <div class="lg:grid lg:grid-cols-3 lg:gap-8">
+                    <!-- Coluna 1 (2/3): Imagem e Resumo Extenso -->
+                    <div class="lg:col-span-2">
+                        <!-- Container da Imagem com Placeholder SVG (robusto) -->
+                        <div id="gameDetailImageContainer" class="w-full mb-6">
+                            <!-- Imagem e loading overlay serão inseridos aqui pelo JS -->
+                        </div>
+                        
+                        <!-- Conteúdo do jogo (Story, Gameplay) -->
+                        <div id="gameDetailContent" class="p-0 text-gray-300 leading-relaxed min-h-[100px] flex items-center justify-center">
+                            <!-- Conteúdo do jogo e loading spinner aqui -->
+                        </div>
+                    </div>
+
+                    <!-- Coluna 2 (1/3): Deixada vazia aqui, a informação resumida será movida para baixo -->
+                    <div class="lg:col-span-1 hidden lg:block">
+                        <!-- Espaço intencionalmente vazio -->
+                    </div>
+                </div>
+
+                <!-- NOVO LOCAL DA INFORMAÇÃO RESUMIDA (Largura Total abaixo do Conteúdo Principal) -->
+                <div class="mt-8 p-6 bg-gray-800 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-200 mb-4 border-b border-gray-700 pb-2">Informação Resumida</h3>
+                    
+                    <!-- Conteúdo do jogo (Story, Gameplay) -->
+                    <div id="gameDetailContentSummary" class="p-0 text-gray-300 leading-relaxed min-h-[100px] flex items-center justify-center">
+                        <!-- O conteúdo detalhado resumido será injetado aqui pelo JS -->
+                        <p class="text-gray-400 p-6">A carregar detalhes do jogo...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fonte e Citações para Detalhes (Rodapé) -->
+            <div id="detailSourcesContainer" class="mt-10 p-4 bg-gray-800 border border-gray-700 rounded-lg hidden">
+                <h3 class="text-lg font-medium text-gray-300 mb-2">Fontes Consultadas:</h3>
+                <ul id="detailSourcesList" class="space-y-1 text-sm text-gray-400 pl-4 list-disc">
+                    <!-- As citações serão inseridas aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações e Funções do App
+
+        // Variável global para armazenar a chave da API. É deixada vazia para ser preenchida automaticamente.
+        const apiKey = ""; 
+        
+        // O URL da API de Geração de Conteúdo do Gemini com o modelo que suporta grounding (pesquisa).
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // Elementos DOM
+        const searchButton = document.getElementById('searchButton');
+        const queryInput = document.getElementById('queryInput');
+        const resultsDiv = document.getElementById('results');
+        const initialMessage = document.getElementById('initialMessage');
+        const sourcesContainer = document.getElementById('sourcesContainer');
+        const sourcesList = document.getElementById('sourcesList');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const searchIcon = document.getElementById('searchIcon');
+        
+        // Elementos para Lançamentos e Views
+        const releasesContainer = document.getElementById('releasesContainer');
+        const mainView = document.getElementById('mainView');
+        const detailView = document.getElementById('detailView');
+        const gameDetailTitle = document.getElementById('gameDetailTitle');
+        const gameDetailImageContainer = document.getElementById('gameDetailImageContainer');
+        const featuredCardContent = document.getElementById('featuredCardContent'); 
+        
+        // ELEMENTOS ATUALIZADOS PARA A NOVA ESTRUTURA DE DETALHES
+        const gameDetailContent = document.getElementById('gameDetailContent'); // Conteúdo Principal 
+        const gameDetailContentSummary = document.getElementById('gameDetailContentSummary'); // Conteúdo Resumido
+        
+        const detailSourcesContainer = document.getElementById('detailSourcesContainer');
+        const detailSourcesList = document.getElementById('detailSourcesList');
+        
+        // Elementos para Tópicos
+        const consolasButton = document.getElementById('consolasButton');
+        const consoleSubMenu = document.getElementById('consoleSubMenu');
+
+        /**
+         * Gera um URL de imagem SVG (placeholder) em linha (Data URI).
+         */
+        function getSvgPlaceholder(gameName) {
+            const safeGameName = gameName.toUpperCase().substring(0, 20); 
+            const text1 = safeGameName;
+            const text2 = "ARTE PROMOCIONAL - CARREGANDO DETALHES";
+            const bgColor = '#1e293b'; 
+            const fgColor = '#fca5a5'; 
+            const strokeColor = '#4b5563'; 
+
+            const svgContent = `
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 338">
+                    <rect width="600" height="338" fill="${bgColor}"/>
+                    <rect x="20" y="20" width="560" height="298" stroke="${strokeColor}" stroke-dasharray="8,8" fill="none" stroke-width="2"/>
+                    <text x="300" y="150" font-family="Inter, sans-serif" font-size="36" fill="${fgColor}" text-anchor="middle" alignment-baseline="middle" font-weight="bold">${text1}</text>
+                    <text x="300" y="195" font-family="Inter, sans-serif" font-size="16" fill="${fgColor}" text-anchor="middle" alignment-baseline="middle">${text2}</text>
+                </svg>
+            `.trim().replace(/\s+/g, ' ').replace(/"/g, "'"); 
+
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgContent)}`;
+        }
+
+        /**
+         * Alterna entre a visualização principal e a visualização de detalhes.
+         */
+        function switchView(viewId) {
+            if (viewId === 'mainView') {
+                mainView.classList.remove('hidden');
+                detailView.classList.add('hidden');
+            } else if (viewId === 'detailView') {
+                mainView.classList.add('hidden');
+                detailView.classList.remove('hidden');
+                
+                gameDetailTitle.textContent = '';
+                gameDetailImageContainer.innerHTML = ''; 
+                gameDetailContent.innerHTML = '<p class="text-gray-400 p-6">A carregar detalhes do jogo...</p>';
+                gameDetailContent.classList.add('flex', 'items-center', 'justify-center');
+                gameDetailContentSummary.innerHTML = '<p class="text-gray-400 p-6">A carregar detalhes do jogo...</p>';
+                gameDetailContentSummary.classList.add('flex', 'items-center', 'justify-center');
+                detailSourcesContainer.classList.add('hidden');
+                detailSourcesList.innerHTML = '';
+            }
+        }
+
+        /**
+         * Realiza chamadas à API com backoff exponencial.
+         */
+        async function fetchWithBackoff(url, options, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    if (response.status === 429 && i < retries - 1) {
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+            throw new Error("Falha ao realizar a chamada da API após várias tentativas.");
+        }
+
+        /**
+         * Processa o texto gerado e extrai as fontes.
+         */
+        function extractContentAndSources(result) {
+            const candidate = result.candidates?.[0];
+            if (!candidate || !candidate.content?.parts?.[0]?.text) {
+                return { text: "Não foi possível gerar um resumo. A resposta da IA estava vazia ou incompleta.", sources: [] };
+            }
+            const text = candidate.content.parts[0].text;
+            let sources = [];
+            const groundingMetadata = candidate.groundingMetadata;
+            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                sources = groundingMetadata.groundingAttributions
+                    .map(attribution => ({
+                        uri: attribution.web?.uri,
+                        title: attribution.web?.title,
+                    }))
+                    .filter(source => source.uri && source.title)
+                    .filter((value, index, self) => index === self.findIndex((t) => (t.uri === value.uri)));
+            }
+            return { text, sources };
+        }
+        
+        /**
+         * Converte a lista Markdown gerada pela IA para HTML no estilo Steam (listas largas).
+         */
+        function formatReleasesList(markdownText) {
+            let cleanMarkdown = markdownText.replace(/\*\*/g, '');
+            const lines = cleanMarkdown.split('\n').filter(line => line.trim().startsWith('-')).slice(0, 10); 
+            let html = ''; 
+
+            if (lines.length === 0) {
+                 return '<p class="col-span-full text-gray-400 text-center p-4">Nenhum lançamento encontrado para os próximos 3 meses.</p>';
+            }
+
+            lines.forEach((line, index) => {
+                let cleanedLine = line.trim().substring(1).trim(); 
+                const nameMatch = cleanedLine.match(/\[\[(.*?)\]\]/);
+                const gameName = nameMatch ? nameMatch[1].trim() : 'Jogo Desconhecido';
+                let details = cleanedLine.replace(/\[\[.*?\]\]/g, '').trim(); 
+                const detailMatch = details.match(/-\s*(.*)/);
+                const dateAndPlatform = detailMatch ? detailMatch[1].trim() : 'Informação de Lançamento Desconhecida';
+                const escapedGameName = gameName.replace(/'/g, "\\'");
+                const placeholderText = encodeURIComponent(gameName.toUpperCase().substring(0, 15));
+                const imageUrl = `https://placehold.co/460x215/2A475E/66C0F4?text=${index + 1}+-+${placeholderText}`;
+                
+                html += `
+                    <div class="steam-release-item" onclick="loadGameDetails('${escapedGameName}')">
+                        <div class="md:w-1/4 lg:w-1/5 flex-shrink-0 mb-3 md:mb-0 md:mr-4">
+                            <img src="${imageUrl}" alt="Banner de ${gameName}" class="steam-image-placeholder-container w-full h-auto rounded-md object-cover">
+                        </div>
+                        <div class="flex-grow flex flex-col justify-center">
+                            <h3 class="steam-title text-xl mb-1 hover:text-white transition duration-150" title="${gameName}">
+                                ${index + 1}. ${gameName}
+                            </h3>
+                            <p class="steam-date text-sm mb-2">${dateAndPlatform}</p>
+                            <p class="text-gray-400 text-xs overflow-hidden line-clamp-2">
+                                Um dos títulos mais esperados do ano. Clique para ver a análise e mais informações.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            releasesContainer.classList.remove('items-center', 'justify-center');
+            return html;
+        }
+
+        /**
+         * Renderiza o conteúdo da tela principal (Featured Card).
+         */
+        function renderResults(text, sources) {
+            let content = text;
+            let linkHtml = '';
+            content = content.replace(/\*\*/g, ''); 
+
+            const formattedContent = content
+                .replace(/\n/g, '<br>')
+                .replace(/\[\[(.*?)\]\]/g, (match, title) => {
+                    const gameName = title.trim();
+                    const escapedGameName = gameName.replace(/'/g, "\\'"); 
+                    return `
+                        <a href="#" onclick="loadGameDetails('${escapedGameName}'); return false;" class="text-red-400 hover:text-red-300 hover:underline font-extrabold transition duration-150" title="Ver detalhes de ${gameName}">
+                            <span class="uppercase">${gameName}</span>
+                        </a>
+                    `;
+                });
+
+            if (sources.length > 0) {
+                const primarySource = sources[0];
+                linkHtml = `
+                    <div class="mb-4 p-4 bg-gray-700 border-l-4 border-red-500 rounded-lg">
+                        <p class="text-sm font-semibold text-red-300 mb-1">Fonte Principal da Notícia:</p>
+                        <a href="${primarySource.uri}" target="_blank" class="text-red-400 hover:text-red-300 hover:underline font-medium break-words" title="${primarySource.title || primarySource.uri}">
+                            ${primarySource.title || primarySource.uri}
+                        </a>
+                    </div>
+                `;
+            }
+
+            const placeholderUrl = `https://placehold.co/400x300/222d3b/93c5fd?text=${encodeURIComponent("DESTAQUE PRINCIPAL")}`;
+            
+            resultsDiv.innerHTML = `
+                <div class="md:grid md:grid-cols-3 min-h-[300px]">
+                    <div class="md:col-span-1 bg-black overflow-hidden relative hidden md:block">
+                        <img src="${placeholderUrl}" alt="Imagem de destaque" class="w-full h-full object-cover opacity-70">
+                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center p-4">
+                            <p class="text-white text-xl font-bold uppercase tracking-widest text-center">NOTÍCIA EM DESTAQUE</p>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2 p-6 md:p-8 space-y-4"> 
+                        ${linkHtml}
+                        <p class="llm-output">${formattedContent}</p>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.classList.remove('flex', 'items-center', 'justify-center');
+            featuredCardContent.classList.add('hidden'); 
+            
+            sourcesList.innerHTML = '';
+            const otherSources = sources.slice(1); 
+            if (otherSources.length > 0) {
+                sourcesContainer.querySelector('h3').textContent = otherSources.length > 1 ? "Outras Fontes Consultadas:" : "Outra Fonte Consultada:";
+                otherSources.forEach(source => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<a href="${source.uri}" target="_blank" class="text-red-400 hover:text-red-300 hover:underline transition duration-150" title="${source.title}">${source.title || source.uri}</a>`;
+                    sourcesList.appendChild(listItem);
+                });
+                sourcesContainer.classList.remove('hidden');
+            } else {
+                sourcesContainer.classList.add('hidden');
+            }
+        }
+        
+        /**
+         * Renderiza o conteúdo na tela de detalhes (Produto).
+         */
+        function renderDetailResults(text, sources) {
+            const parts = text.split(/\[\[História e Contexto\]\]/i);
+            const summaryText = parts[0].trim();
+            const mainContentText = parts.length > 1 ? `[[História e Contexto]]${parts.slice(1).join('[[História e Contexto]]').trim()}` : '';
+            
+            const cleanSummary = summaryText.replace(/\*\*/g, ''); 
+            const cleanMainContent = mainContentText.replace(/\*\*/g, '');
+
+            const imageOverlay = document.getElementById('imageOverlay');
+            if (imageOverlay) imageOverlay.remove();
+
+            const formattedSummary = cleanSummary.replace(/\n/g, '<br>');
+            gameDetailContentSummary.innerHTML = `<div class="llm-output">${formattedSummary}</div>`;
+            gameDetailContentSummary.classList.remove('flex', 'items-center', 'justify-center');
+
+            const formattedMainContent = cleanMainContent
+                .replace(/\n/g, '<br>')
+                .replace(/\[\[(.*?)\]\]/g, (match, title) => 
+                    `<h3 class="font-bold text-xl text-red-400 mt-4 mb-2">${title.trim().toUpperCase()}</h3>`
+                );
+
+            gameDetailContent.innerHTML = `<div class="llm-output">${formattedMainContent}</div>`;
+            gameDetailContent.classList.remove('flex', 'items-center', 'justify-center');
+
+            detailSourcesList.innerHTML = '';
+            if (sources.length > 0) {
+                sources.forEach(source => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<a href="${source.uri}" target="_blank" class="text-red-400 hover:text-red-300 hover:underline transition duration-150" title="${source.title}">${source.title || source.uri}</a>`;
+                    detailSourcesList.appendChild(listItem);
+                });
+                detailSourcesContainer.classList.remove('hidden');
+            } else {
+                detailSourcesContainer.classList.add('hidden');
+            }
+        }
+
+        function toggleConsoleSubMenu() {
+            consoleSubMenu.classList.toggle('hidden');
+            if (!consoleSubMenu.classList.contains('hidden')) {
+                consolasButton.classList.remove('bg-gray-700', 'hover:bg-red-600');
+                consolasButton.classList.add('bg-red-600', 'shadow-red-500/50');
+            } else {
+                consolasButton.classList.add('bg-gray-700', 'hover:bg-red-600');
+                consolasButton.classList.remove('bg-red-600', 'shadow-red-500/50');
+            }
+        }
+
+        function setQueryAndFetch(query) {
+            queryInput.value = query;
+            fetchGameNews();
+            if (!consoleSubMenu.classList.contains('hidden')) {
+                toggleConsoleSubMenu();
+            }
+        }
+
+        async function loadGameDetails(gameName) {
+            switchView('detailView');
+            gameDetailTitle.textContent = gameName.toUpperCase();
+            
+            const svgDataUri = getSvgPlaceholder(gameName);
+            gameDetailImageContainer.innerHTML = `
+                <div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-xl border border-gray-700">
+                    <img src="${svgDataUri}" alt="Placeholder para a arte do jogo ${gameName}" class="w-full h-full object-cover">
+                    <div id="imageOverlay" class="absolute inset-0 bg-gray-900/90 flex items-center justify-center transition-opacity duration-300">
+                        <svg class="w-10 h-10 animate-spin text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+            `;
+
+            gameDetailContent.innerHTML = `<p class="text-gray-400 p-6">A buscar detalhes sobre ${gameName}...</p>`;
+            gameDetailContent.classList.add('flex', 'items-center', 'justify-center');
+            
+            const detailQuery = `Detalhes, resumo da história, jogabilidade e data de lançamento do jogo ${gameName}.`;
+            const detailSystemPrompt = "Aja como um enciclopedista de videogames. Forneça um resumo detalhado e abrangente (cerca de 200 palavras) sobre o jogo solicitado, incluindo informações sobre história, jogabilidade e desenvolvimento. Responda em Português de Portugal. Baseie-se estritamente nas fontes fornecidas. ENVOLVA O TÍTULO DO JOGO ENTRE DOIS COLCHETES DUPLOS (ex: [[Nome do Jogo]]). NUNCA use asteriscos (**) para negrito ou formatação.";
+
+            const payload = {
+                contents: [{ parts: [{ text: detailQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: detailSystemPrompt }] },
+            };
+
+            try {
+                const response = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.error) throw new Error(result.error.message || "Erro desconhecido na resposta da API.");
+                const { text, sources } = extractContentAndSources(result);
+                renderDetailResults(text, sources);
+            } catch (error) {
+                console.error(`Erro ao buscar detalhes de ${gameName}:`, error);
+                const imageOverlay = document.getElementById('imageOverlay');
+                if (imageOverlay) imageOverlay.remove();
+                gameDetailContent.innerHTML = `<p class="text-red-400 p-4">Não foi possível carregar os detalhes de ${gameName}. Tente novamente mais tarde.</p>`;
+            }
+        }
+
+        async function fetchGameReleases() {
+            releasesContainer.innerHTML = '<p id="releasesMessage" class="col-span-full text-gray-400 text-center p-4">A buscar a lista de lançamentos...</p>';
+            releasesContainer.classList.add('items-center', 'justify-center');
+
+            const releasesQuery = "Os 10 principais próximos lançamentos de videojogos mais importantes dos próximos 3 meses. Formatar como uma lista Markdown com o Título do Jogo, Plataformas e Data de Lançamento.";
+            const releasesSystemPrompt = "Aja como um curador de calendário de jogos. Forneça uma lista estritamente formatada em Markdown dos 10 lançamentos mais importantes, incluindo o nome do jogo, plataformas (ex: PC, PS5, Xbox Series X, Switch) e a data de lançamento. Apenas inclua lançamentos confirmados e baseados em fontes verificadas. Não inclua texto introdutório ou conclusivo. Use hífen (-) para listar os itens, e ENVOLVA O NOME DO JOGO ENTRE DOIS COLCHETES DUPLOS (ex: [[Nome do Jogo]]). NUNCA use asteriscos (**) para negrito ou formatação.";
+
+            const payload = {
+                contents: [{ parts: [{ text: releasesQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: releasesSystemPrompt }] },
+            };
+
+            try {
+                const response = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (content) {
+                    releasesContainer.innerHTML = formatReleasesList(content);
+                    releasesContainer.classList.remove('items-center', 'justify-center');
+                } else {
+                    releasesContainer.innerHTML = '<p class="col-span-full text-red-400 text-center p-4">Não foi possível carregar a lista de lançamentos.</p>';
+                }
+            } catch (error) {
+                console.error("Erro ao buscar lançamentos:", error);
+                releasesContainer.innerHTML = '<p class="col-span-full text-red-400 text-center p-4">Erro ao carregar a lista. Tente novamente mais tarde.</p>';
+            }
+        }
+
+        async function fetchGameNews() {
+            const query = queryInput.value.trim();
+            if (query === "") {
+                alertUser("Por favor, digite uma consulta antes de buscar.");
+                return;
+            }
+            
+            switchView('mainView');
+            initialMessage.classList.add('hidden');
+            sourcesContainer.classList.add('hidden');
+            sourcesList.innerHTML = '';
+            errorContainer.classList.add('hidden');
+            errorMessage.textContent = '';
+            
+            resultsDiv.innerHTML = `
+                <div class="min-h-[300px] flex items-center justify-center text-center p-8">
+                    <p class="text-gray-400 text-lg">Buscando as novidades... Isso pode levar alguns segundos. ⏳</p>
+                </div>
+            `;
+            
+            searchButton.disabled = true;
+            loadingSpinner.classList.remove('hidden');
+            searchIcon.classList.add('hidden');
+
+            const systemPrompt = "Aja como um repórter especializado em notícias de videogames. Seu objetivo é fornecer um resumo conciso e envolvente das últimas novidades do mundo dos jogos eletrónicos, respondendo diretamente à consulta do usuário. A resposta deve ser profissional, informativa e baseada estritamente nas fontes fornecidas pelo Google Search. Responda em Português de Portugal. ENVOLVA O TÍTULO DE QUALQUER JOGO OU CONTEÚDO PRINCIPAL ENTRE DOIS COLCHETES DUPLOS (ex: [[Nome do Jogo]]). NUNCA use asteriscos (**) para negrito ou formatação. Não inclua quaisquer tags ou formatação especial para imagens.";
+
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            try {
+                const response = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.error) throw new Error(result.error.message || "Erro desconhecido na resposta da API.");
+                const { text, sources } = extractContentAndSources(result);
+                renderResults(text, sources);
+            } catch (error) {
+                console.error("Erro completo:", error);
+                alertUser(`Não foi possível carregar as notícias. Detalhes: ${error.message}`);
+                resultsDiv.innerHTML = `
+                    <div class="min-h-[300px] flex items-center justify-center text-center p-8">
+                         <p class="text-red-400">Erro ao buscar dados. Tente uma consulta diferente ou cheque o console para mais detalhes.</p>
+                    </div>
+                `;
+            } finally {
+                searchButton.disabled = false;
+                loadingSpinner.classList.add('hidden');
+                searchIcon.classList.remove('hidden');
+            }
+        }
+
+        function alertUser(message) {
+            errorContainer.classList.remove('hidden');
+            errorMessage.textContent = message;
+        }
+        
+        window.onload = function() {
+            fetchGameNews();
+            fetchGameReleases();
+        };
+    </script>
+</body>
+</html>
